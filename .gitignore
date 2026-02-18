@@ -12,7 +12,7 @@ apps/web/node_modules/
 apps/web/.next/
 apps/frontend/node_modules/
 apps/frontend/.next/
-apps/frontend/.env.local
+apps/frontend/.env
 
 # OS
 .DS_Store
