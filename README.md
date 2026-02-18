@@ -5,8 +5,8 @@ JobTrackr is a full-stack job application tracking and analytics dashboard. It h
 **Live Demo:** `ADD_YOUR_DEPLOYED_LINK_HERE`
 
 ## Screenshots
-![Dashboard overview](docs/screenshots/ss1.png)
-![Application form and pipeline table](docs/screenshots/ss2.png)
+![Dashboard overview](docs/screenshots/Dashboard.png)
+![Application form and pipeline table](docs/screenshots/form.png)
 
 ## Highlights
 - Full CRUD workflows with soft delete + undo
