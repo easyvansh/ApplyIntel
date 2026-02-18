@@ -1,42 +1,30 @@
-# JobTrackr - Full-Stack Job Application Tracker
+﻿# JobTrackr — Job Application Tracker
 
-Deployed link: `ADD_YOUR_DEPLOYED_LINK_HERE`
+JobTrackr is a full-stack job application tracking and analytics dashboard. It helps you manage application workflows, monitor pipeline health, and keep follow-ups on schedule.
 
-## What It Does
-- Tracks job applications with full lifecycle workflows: create, update status, delete, and undo delete.
-- Surfaces decision-making analytics with totals, status breakdown, response rate, and follow-up queues.
-- Supports practical operations: search/filter/sort, pagination, and CSV export of filtered data.
+**Live Demo:** `ADD_YOUR_DEPLOYED_LINK_HERE`
+
+## Screenshots
+![Dashboard overview](docs/screenshots/ss1.png)
+![Application form and pipeline table](docs/screenshots/ss2.png)
+
+## Highlights
+- Full CRUD workflows with soft delete + undo
+- Status analytics and response-rate insights
+- Follow-up queue (due today, saved, interviews)
+- Search, filter, sort, pagination, and CSV export
 
 ## Tech Stack
-- Frontend: Next.js (TypeScript, App Router)
-- Animation: Framer Motion
-- Backend: FastAPI (Python)
-- Database: SQLite (default), PostgreSQL-compatible via `DATABASE_URL`
-- Charts: Chart.js + `react-chartjs-2`
-- HTTP: Axios
+- **Frontend:** Next.js (TypeScript, App Router), Framer Motion
+- **Backend:** FastAPI (Python), SQLAlchemy
+- **Database:** SQLite (default), Postgres-compatible via `DATABASE_URL`
+- **Charts:** Chart.js + `react-chartjs-2`
+- **HTTP:** Axios
 
-## Key Features
-- CRUD workflows
-  - Create applications
-  - Inline status updates (`PATCH`)
-  - Delete with confirmation modal
-  - Undo delete toast (5 second window)
-- Persistence
-  - SQLAlchemy-backed storage
-  - SQLite local DB file (`services/api/jobtrackr.db`)
-- Analytics dashboard
-  - Total applications, interviews, offers
-  - Status pie chart
-  - Response rate
-  - Follow-up queue cards: due today, saved jobs, interviews
-- Internal dashboard UX
-  - Search by company/role
-  - Filter by status
-  - Has-link toggle
-  - Sort by date applied (newest/oldest)
-  - Pagination
-  - CSV export for current filtered view
-  - Loading/empty/error states
+## Architecture
+- `apps/frontend`: Next.js UI
+- `services/api`: FastAPI service + SQLAlchemy models
+- `docs/`: Screenshots and deployment notes
 
 ## API Endpoints
 - `GET /health`
@@ -55,8 +43,7 @@ Deployed link: `ADD_YOUR_DEPLOYED_LINK_HERE`
 }
 ```
 
-## Run Locally
-
+## Local Development
 ### 1) Backend API
 From `jobtrackr/services/api`:
 ```bash
@@ -98,26 +85,13 @@ export DATABASE_URL="postgresql+psycopg2://postgres:postgres@localhost:5432/jobt
 uvicorn main:app --reload --port 8000
 ```
 
-## Request/Response Notes
-### `POST /applications`
-```json
-{
-  "company": "Company",
-  "role": "Role",
-  "location": "Edmonton, AB",
-  "url": "https://...",
-  "status": "applied",
-  "date_applied": "2026-02-17",
-  "next_action_date": "2026-02-20",
-  "notes": "optional"
-}
-```
+## Environment Variables
+- `DATABASE_URL` — SQLAlchemy database URL (SQLite by default).
+- `ALLOWED_ORIGINS` — comma-separated list of allowed frontend origins.
+- `NEXT_PUBLIC_API_BASE_URL` — API base URL for the frontend.
 
-Allowed status values: `saved`, `applied`, `interview`, `rejected`, `offer`.
-
-## Screenshots
-- Dashboard overview: `docs/screenshots/ss1.png`
-- Form + table workflows: `docs/screenshots/ss2.png`
+## Deployment
+See `docs/DEPLOYMENT.md` for Vercel + Render instructions.
 
 ## Resume Bullet
 Built a full-stack job application tracking and analytics dashboard using Next.js (TypeScript), FastAPI, and SQL persistence with CRUD APIs, follow-up queue automation, and interactive outcome visualizations.

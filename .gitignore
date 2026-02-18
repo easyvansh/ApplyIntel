@@ -1,7 +1,11 @@
-# Python
+﻿# Python
 services/api/.venv/
 services/api/__pycache__/
 services/api/*.pyc
+
+# Databases
+services/api/jobtrackr.db
+*.db
 
 # Node
 apps/web/node_modules/
