@@ -15,7 +15,7 @@ const body = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "JobTrackr",
+  title: "ApplyIntel",
   description: "Track applications, follow-ups, and outcomes in one dashboard.",
 };
 

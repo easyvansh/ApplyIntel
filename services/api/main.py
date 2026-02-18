@@ -121,7 +121,7 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-app = FastAPI(title="JobTrackr API", version="1.0.0")
+app = FastAPI(title="ApplyIntel API", version="1.0.0")
 
 raw_origins = os.getenv("ALLOWED_ORIGINS")
 if raw_origins:

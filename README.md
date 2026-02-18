@@ -1,6 +1,6 @@
-﻿# JobTrackr — Job Application Tracker
+﻿# ApplyIntel — Job Application Tracker
 
-JobTrackr is a full-stack job application tracking and analytics dashboard. It helps you manage application workflows, monitor pipeline health, and keep follow-ups on schedule.
+ApplyIntel is a full-stack job application tracking and analytics dashboard. It helps you manage application workflows, monitor pipeline health, and keep follow-ups on schedule.
 
 **Live Demo:** `ADD_YOUR_DEPLOYED_LINK_HERE`
 
@@ -94,4 +94,4 @@ uvicorn main:app --reload --port 8000
 See `docs/DEPLOYMENT.md` for Vercel + Render instructions.
 
 ## Resume Bullet
-Built a full-stack job application tracking and analytics dashboard using Next.js (TypeScript), FastAPI, and SQL persistence with CRUD APIs, follow-up queue automation, and interactive outcome visualizations.
+Built ApplyIntel, a full-stack job application tracking and analytics dashboard using Next.js (TypeScript), FastAPI, and SQL persistence with CRUD APIs, follow-up queue automation, and interactive outcome visualizations.

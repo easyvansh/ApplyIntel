@@ -5,8 +5,8 @@
   --panel-2: #0f1520;
   --text: #f5f7fb;
   --muted: #a7b1c3;
-  --accent: #3dd5a7;
-  --accent-2: #6cb8ff;
+  --accent: #0a84ff;
+  --accent-2: #5ac8fa;
   --warn: #f2b84b;
   --danger: #ff6b6b;
   --border: rgba(255, 255, 255, 0.08);
@@ -163,9 +163,9 @@ button {
 }
 
 .btn-primary {
-  background: linear-gradient(120deg, var(--accent), #2aa0ff);
-  color: #041017;
-  box-shadow: 0 12px 25px rgba(61, 213, 167, 0.35);
+  background: linear-gradient(180deg, #5ac8fa 0%, #0a84ff 100%);
+  color: #f8fbff;
+  box-shadow: 0 14px 26px rgba(10, 132, 255, 0.32);
 }
 
 .btn-muted {

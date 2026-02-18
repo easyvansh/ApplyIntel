@@ -224,8 +224,8 @@ export default function DashboardPage() {
         transition={{ duration: 0.5 }}
       >
         <div>
-          <div className="badge">Live Pipeline</div>
-          <h1 className="title">JobTrackr Command Center</h1>
+          <div className="badge">ApplyIntel</div>
+          <h1 className="title">ApplyIntel Command Center</h1>
           <p className="subtitle">
             Track every application, track follow-ups, and keep the pipeline
             moving without spreadsheet chaos.
