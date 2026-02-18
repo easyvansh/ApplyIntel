@@ -8,8 +8,10 @@ This project deploys the frontend to Vercel and the FastAPI backend to Render wi
    - `pip install -r requirements.txt`
 3. Start command:
    - `uvicorn main:app --host 0.0.0.0 --port 8000`
-4. Add a **persistent disk** mounted at `/var/data`.
-5. Set environment variables:
+4. Python version:
+   - Use `python-3.12.8` via `services/api/runtime.txt` (already in repo).
+5. Add a **persistent disk** mounted at `/var/data`.
+6. Set environment variables:
    - `DATABASE_URL=sqlite:////var/data/jobtrackr.db`
    - `ALLOWED_ORIGINS=https://<your-vercel-domain>`
 

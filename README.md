@@ -92,6 +92,7 @@ uvicorn main:app --reload --port 8000
 
 ## Deployment
 See `docs/DEPLOYMENT.md` for Vercel + Render instructions.
+Render uses the Python version in `services/api/runtime.txt` (currently `python-3.12.8`).
 
 ## Resume Bullet
 Built ApplyIntel, a full-stack job application tracking and analytics dashboard using Next.js (TypeScript), FastAPI, and SQL persistence with CRUD APIs, follow-up queue automation, and interactive outcome visualizations.
