@@ -15,6 +15,7 @@ import Papa from "papaparse";
 import {
   Application,
   ApplicationCreate,
+  Stats,
   Status,
   deleteApplication,
   fetchApplications,
@@ -55,7 +56,7 @@ function formatDate(value?: string | null) {
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     total: 0,
     counts: {},
     response_rate: 0,
