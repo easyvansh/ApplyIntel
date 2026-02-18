@@ -1,0 +1,15 @@
+# Python
+services/api/.venv/
+services/api/__pycache__/
+services/api/*.pyc
+
+# Node
+apps/web/node_modules/
+apps/web/.next/
+apps/frontend/node_modules/
+apps/frontend/.next/
+apps/frontend/.env.local
+
+# OS
+.DS_Store
+Thumbs.db
