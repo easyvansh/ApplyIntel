@@ -3,8 +3,9 @@
 ApplyIntel is a full-stack job application tracking and analytics dashboard. It helps you manage application workflows, monitor pipeline health, and keep follow-ups on schedule.
 
 
+[Wake Up the Server](https://applyintel.onrender.com)
+[Client](https://apply-intel.vercel.app/)
 
-[Live Demo](https://apply-intel.vercel.app/)
 
 ## Screenshots
 ![Dashboard overview](docs/screenshots/Dashboard.png)
