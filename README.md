@@ -87,6 +87,7 @@ Architecture follows a modern full-stack separation:
   "items": [],
   "total": 0
 }
+```
 
 
 ## Local Development
