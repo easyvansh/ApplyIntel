@@ -6,9 +6,13 @@ import os
 import re
 import time
 import uuid
+from contextlib import asynccontextmanager
 from datetime import date, datetime
+from pathlib import Path
 from typing import Generator, Literal
 
+from alembic import command
+from alembic.config import Config
 from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -72,26 +76,21 @@ class Application(Base):
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
 
 
-Base.metadata.create_all(bind=engine)
+ALEMBIC_INI_PATH = Path(__file__).with_name("alembic.ini")
+ALEMBIC_SCRIPT_PATH = Path(__file__).with_name("alembic")
 
 
-def run_migrations() -> None:
-    if not DATABASE_URL.startswith("sqlite"):
-        return
-
-    with engine.begin() as connection:
-        columns = {
-            row[1] for row in connection.exec_driver_sql("PRAGMA table_info(applications)").fetchall()
-        }
-
-        if "next_action_date" not in columns:
-            connection.exec_driver_sql("ALTER TABLE applications ADD COLUMN next_action_date DATE")
-
-        if "deleted_at" not in columns:
-            connection.exec_driver_sql("ALTER TABLE applications ADD COLUMN deleted_at DATETIME")
+def run_database_migrations() -> None:
+    config = Config(str(ALEMBIC_INI_PATH))
+    config.set_main_option("script_location", str(ALEMBIC_SCRIPT_PATH))
+    command.upgrade(config, "head")
 
 
-run_migrations()
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    run_database_migrations()
+    yield
+
 
 
 class ApplicationCreate(BaseModel):
@@ -146,7 +145,7 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-app = FastAPI(title="ApplyIntel API", version="1.0.0")
+app = FastAPI(title="ApplyIntel API", version="2.0.0", lifespan=lifespan)
 
 raw_origins = os.getenv("ALLOWED_ORIGINS")
 if raw_origins:
