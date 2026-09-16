@@ -46,6 +46,7 @@ The platform simulates a lightweight ATS (Applicant Tracking System) tailored fo
 ### Backend
 - FastAPI (Python)
 - SQLAlchemy ORM
+- Alembic migrations
 - Uvicorn (ASGI server)
 
 ### Database
@@ -73,7 +74,9 @@ Architecture follows a modern full-stack separation:
 
 | Method | Endpoint | Description |
 |--------|---------|-------------|
-| GET | `/health` | API health check |
+| GET | `/health` | Compatibility health check |
+| GET | `/health/live` | Process liveness check |
+| GET | `/health/ready` | Database readiness check |
 | POST | `/applications` | Create application |
 | GET | `/applications` | List/search/filter applications |
 | PATCH | `/applications/{id}` | Update application |
@@ -100,17 +103,22 @@ python -m venv .venv
 # macOS/Linux
 # source .venv/bin/activate
 
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
+alembic upgrade head
 uvicorn main:app --reload --port 8000
 ```
 
 Verify:
 - `http://localhost:8000/health` -> `{ "ok": true }`
+- `http://localhost:8000/health/live` -> `{ "status": "alive" }`
+- `http://localhost:8000/health/ready` -> database connectivity status
+
+The API also runs `alembic upgrade head` during startup. Running it explicitly makes migration failures visible before starting the development server.
 
 ### 2) Frontend Web App
 From `jobtrackr/apps/frontend`:
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -136,6 +144,44 @@ uvicorn main:app --reload --port 8000
 - `DATABASE_URL` — SQLAlchemy database URL (SQLite by default).
 - `ALLOWED_ORIGINS` — comma-separated list of allowed frontend origins.
 - `NEXT_PUBLIC_API_BASE_URL` — API base URL for the frontend.
+
+## Testing
+
+From `services/api`, run:
+
+```bash
+pytest
+```
+
+The tests use a disposable SQLite database and do not modify the normal development database.
+
+To verify the frontend production build, run from `apps/frontend`:
+
+```bash
+npm ci
+npm run build
+```
+
+## Database Migrations
+
+From `services/api`, apply all versioned migrations with:
+
+```bash
+alembic upgrade head
+```
+
+Alembic reads `DATABASE_URL`; credentials are not stored in the migration configuration. The baseline migration can create a new database or safely adopt an existing ApplyIntel applications table.
+
+## Engineering
+
+- Automated FastAPI lifecycle tests with pytest
+- GitHub Actions CI for backend tests and frontend production builds
+- Version-controlled SQLAlchemy schema migrations with Alembic
+- Separate liveness and database-readiness endpoints
+- Request IDs and structured request logging
+- Standardized application-level API errors
+- Soft-delete and restore workflow
+- PostgreSQL-compatible relational persistence
 
 ## Deployment
 See `docs/DEPLOYMENT.md` for Vercel + Render instructions.

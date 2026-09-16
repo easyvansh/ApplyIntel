@@ -14,6 +14,9 @@ This project deploys the frontend to Vercel and the FastAPI backend to Render wi
 6. Set environment variables:
    - `DATABASE_URL=sqlite:////var/data/jobtrackr.db`
    - `ALLOWED_ORIGINS=https://<your-vercel-domain>`
+7. Keep the service health-check path at `/health` for backward compatibility. Use `/health/ready` when a database-aware readiness signal is supported.
+
+The API applies `alembic upgrade head` during startup before accepting traffic. A migration failure stops startup instead of running against a partially migrated schema.
 
 ## Frontend (Vercel)
 1. Import the repo and set the root to `apps/frontend`.
@@ -24,3 +27,4 @@ This project deploys the frontend to Vercel and the FastAPI backend to Render wi
 ## Notes
 - If you use Postgres instead of SQLite, update `DATABASE_URL` accordingly.
 - For local dev, keep `ALLOWED_ORIGINS=http://localhost:3000`.
+- Back up persistent production data before applying a new migration.
