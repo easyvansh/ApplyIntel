@@ -41,6 +41,12 @@ export interface ApplicationListResponse {
   total: number;
 }
 
+export interface Readiness {
+  status: "ready";
+  database: "connected";
+  requestId: string | null;
+}
+
 interface APIErrorResponse {
   error?: {
     code?: string;
@@ -101,4 +107,12 @@ export async function restoreApplication(id: number) {
 export async function fetchStats() {
   const response = await api.get<Stats>("/stats");
   return response.data;
+}
+
+export async function fetchReadiness(): Promise<Readiness> {
+  const response = await api.get<Omit<Readiness, "requestId">>("/health/ready");
+  return {
+    ...response.data,
+    requestId: response.headers["x-request-id"] || null,
+  };
 }

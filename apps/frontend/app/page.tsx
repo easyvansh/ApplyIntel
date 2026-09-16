@@ -19,6 +19,7 @@ import {
   Status,
   deleteApplication,
   fetchApplications,
+  fetchReadiness,
   fetchStats,
   getApiErrorMessage,
   restoreApplication,
@@ -69,6 +70,10 @@ export default function DashboardPage() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [systemHealth, setSystemHealth] = useState<"checking" | "ready" | "unavailable">(
+    "checking"
+  );
+  const [lastRequestId, setLastRequestId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<Status | "">("");
   const [hasLinkFilter, setHasLinkFilter] = useState<"" | "yes" | "no">("");
@@ -114,6 +119,17 @@ export default function DashboardPage() {
     },
   };
 
+  const checkSystemHealth = async () => {
+    try {
+      const readiness = await fetchReadiness();
+      setSystemHealth(readiness.status === "ready" ? "ready" : "unavailable");
+      setLastRequestId(readiness.requestId);
+    } catch {
+      setSystemHealth("unavailable");
+      setLastRequestId(null);
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     setError(null);
@@ -148,6 +164,10 @@ export default function DashboardPage() {
   useEffect(() => {
     loadData();
   }, [query, statusFilter, hasLinkFilter, sortOrder, page]);
+
+  useEffect(() => {
+    checkSystemHealth();
+  }, []);
 
   const handleStatusUpdate = async (id: number, status: Status) => {
     setError(null);
@@ -252,6 +272,17 @@ export default function DashboardPage() {
             Track every application, track follow-ups, and keep the pipeline
             moving without spreadsheet chaos.
           </p>
+          <div className={`system-status ${systemHealth}`}>
+            <span className="system-status-dot" />
+            {systemHealth === "ready"
+              ? "API ready · Database connected"
+              : systemHealth === "checking"
+                ? "Checking API readiness…"
+                : "API readiness unavailable"}
+            {lastRequestId && (
+              <span className="request-trace">Trace {lastRequestId.slice(0, 8)}</span>
+            )}
+          </div>
         </div>
         <div className="actions">
           <button className="btn btn-primary" onClick={handleExport}>
@@ -262,6 +293,7 @@ export default function DashboardPage() {
             onClick={() => {
               setPage(1);
               loadData();
+              checkSystemHealth();
             }}
           >
             Refresh

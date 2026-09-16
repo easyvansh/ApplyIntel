@@ -7,7 +7,7 @@ This project deploys the frontend to Vercel and the FastAPI backend to Render wi
 2. Build command:
    - `pip install -r requirements.txt`
 3. Start command:
-   - `uvicorn main:app --host 0.0.0.0 --port 8000`
+   - `uvicorn main:app --host 0.0.0.0 --port $PORT`
 4. Python version:
    - Use `python-3.12.8` via `services/api/runtime.txt` (already in repo).
 5. Add a **persistent disk** mounted at `/var/data`.
@@ -17,6 +17,8 @@ This project deploys the frontend to Vercel and the FastAPI backend to Render wi
 7. Keep the service health-check path at `/health` for backward compatibility. Use `/health/ready` when a database-aware readiness signal is supported.
 
 The API applies `alembic upgrade head` during startup before accepting traffic. A migration failure stops startup instead of running against a partially migrated schema.
+
+For an existing Render service that has not picked up the latest `main` push, use **Manual Deploy → Deploy latest commit**. Keep the same service and persistent disk so the public URL and database remain unchanged.
 
 ## Frontend (Vercel)
 1. Import the repo and set the root to `apps/frontend`.

@@ -54,7 +54,8 @@ The platform simulates a lightweight ATS (Applicant Tracking System) tailored fo
 ## Tech Stack
 
 ### Frontend
-- Next.js (TypeScript, App Router)
+- Next.js 15 (TypeScript, App Router)
+- React 19
 - Framer Motion (UI animations)
 - Chart.js + react-chartjs-2 (analytics visualization)
 - Axios (API communication)
@@ -104,6 +105,22 @@ Quality gates: pytest + GitHub Actions + Next.js production build
 - `services/api` contains FastAPI routes, SQLAlchemy persistence, Alembic migrations, and pytest tests.
 - `.github/workflows/ci.yml` defines backend and frontend CI checks.
 - `docs` contains local-development and deployment guidance.
+
+## Version 1 → Version 2
+
+| Area | Version 1 | Version 2 |
+|---|---|---|
+| Health | Single static `/health` response | Compatibility health plus process liveness and database readiness |
+| Debugging | Framework access logs | Request IDs, response trace headers, and structured JSON latency logs |
+| Errors | Ad hoc FastAPI detail strings | Stable application-error codes with user-safe messages and request IDs |
+| Testing | Manual verification | Isolated pytest coverage of the core application lifecycle |
+| Delivery | Local build checks | GitHub Actions backend-test and frontend-build quality gates |
+| Database changes | Import-time table creation and manual SQLite alters | Version-controlled Alembic migrations for new and existing databases |
+| Backend structure | Infrastructure embedded in `main.py` | Dedicated database, logging, and error modules with the same deployment entrypoint |
+| Frontend runtime | Next.js 14 and React 18 | Supported Next.js 15.5 and React 19 with audited dependencies |
+| Operations UI | Product data only | Live API/database readiness and request-trace indicator in the dashboard |
+
+V2 preserves the original application workflow, search, filters, pagination, analytics, CSV export, and soft-delete/restore behavior while making the repository safer to test, migrate, debug, and deploy.
 
 ---
 
@@ -282,6 +299,36 @@ Alembic reads `DATABASE_URL`; credentials are not stored in the migration config
 ## Deployment
 See `docs/DEPLOYMENT.md` for Vercel + Render instructions.
 Render uses the Python version in `services/api/runtime.txt` (currently `python-3.12.8`).
+
+### Render V2 settings
+
+Use these settings for the existing ApplyIntel backend service:
+
+```text
+Root Directory: services/api
+Build Command:  pip install -r requirements.txt
+Start Command:  uvicorn main:app --host 0.0.0.0 --port $PORT
+Health Check:   /health
+```
+
+Keep the existing environment variables:
+
+```text
+DATABASE_URL=sqlite:////var/data/jobtrackr.db
+ALLOWED_ORIGINS=https://apply-intel.vercel.app
+```
+
+Deploy commit `020c0fb` or any newer commit from `main`. V2 applies `alembic upgrade head` during startup, preserves the compatibility `/health` endpoint, and exposes database-aware readiness at `/health/ready`. If Render is still serving V1 after a GitHub push, choose **Manual Deploy → Deploy latest commit** for the existing service; do not create a second backend.
+
+### Vercel V2 settings
+
+Keep `apps/frontend` as the root directory and retain:
+
+```text
+NEXT_PUBLIC_API_BASE_URL=https://applyintel.onrender.com
+```
+
+After deployment, verify the dashboard shows **API ready · Database connected** and that `https://applyintel.onrender.com/health/ready` returns HTTP 200.
 
 ApplyIntel demonstrates practical full-stack engineering skills:
 - Production-style API design
