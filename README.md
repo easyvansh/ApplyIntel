@@ -26,14 +26,30 @@ The platform simulates a lightweight ATS (Applicant Tracking System) tailored fo
 ### Application Form + Pipeline Table
 ![Application form and pipeline table](docs/screenshots/form.png)
 
-## Highlights
-- Full CRUD job application tracking with soft delete + undo
-- Application pipeline tracking (Applied → Interview → Offer → Rejected)
-- Follow-up management queue (due today, upcoming, saved)
-- Search, filter, sort, and pagination across applications
-- CSV export for external tracking or reporting
-- Status analytics and response-rate visualization
-- Clean dashboard UI with interactive charts
+## Features
+
+### Product
+
+- Create and organize job applications with company, role, location, job link, notes, status, and follow-up dates
+- Track the pipeline across Saved, Applied, Interview, Offer, and Rejected stages
+- Search by company or role and filter by status or job-link availability
+- Sort by application date and navigate large result sets with API-backed pagination
+- Soft-delete applications, then restore them through the five-second undo workflow
+- Monitor total applications, interviews, offers, saved jobs, response rate, and follow-ups due today
+- Export the currently displayed application data as CSV
+- Use the responsive Next.js dashboard with animated UI and Chart.js visualizations
+
+### Engineering and reliability
+
+- Separate liveness and database-readiness probes while retaining the original deployment-compatible health URL
+- Request IDs accepted or generated for every API call and returned through `X-Request-ID`
+- Structured JSON request logs containing request ID, method, path, response status, and duration
+- Stable application-error envelopes with traceable request IDs, without exposing internal exceptions
+- Isolated pytest lifecycle tests covering health, creation, listing, search, filters, pagination, updates, soft delete, restore, validation, and analytics
+- GitHub Actions checks backend tests and the frontend production build on pull requests and pushes to `main`
+- Alembic-managed schema evolution for new and existing SQLite or PostgreSQL-compatible databases
+- Automatic migration during API startup, with startup failure instead of serving against a partial schema
+- Modular backend infrastructure for database sessions, logging, and API error handling
 
 ## Tech Stack
 
@@ -45,9 +61,12 @@ The platform simulates a lightweight ATS (Applicant Tracking System) tailored fo
 
 ### Backend
 - FastAPI (Python)
+- Pydantic request/response validation
 - SQLAlchemy ORM
 - Alembic migrations
 - Uvicorn (ASGI server)
+- Python standard-library structured logging
+- Pytest + HTTPX API testing
 
 ### Database
 - SQLite (default local development)
@@ -56,17 +75,35 @@ The platform simulates a lightweight ATS (Applicant Tracking System) tailored fo
 ### Deployment
 - Vercel — frontend hosting
 - Render — backend API hosting
+- GitHub Actions — continuous integration
 
 ## Architecture
-- `apps/frontend`: Next.js UI
-- `services/api`: FastAPI service + SQLAlchemy models
-- `docs/`: Screenshots and deployment notes
 
+```text
+Next.js / TypeScript
+        │
+        │ REST + X-Request-ID
+        ▼
+FastAPI
+        ├── health and readiness
+        ├── request tracing and JSON logs
+        ├── standardized application errors
+        ├── application workflow and analytics
+        └── SQLAlchemy sessions
+                 │
+                 ▼
+        SQLite / PostgreSQL
+                 ▲
+                 │
+              Alembic
 
-Architecture follows a modern full-stack separation:
-- Frontend consumes REST APIs
-- Backend handles business logic + analytics
-- Database persists applications and metrics
+Quality gates: pytest + GitHub Actions + Next.js production build
+```
+
+- `apps/frontend` contains the Next.js dashboard and API client.
+- `services/api` contains FastAPI routes, SQLAlchemy persistence, Alembic migrations, and pytest tests.
+- `.github/workflows/ci.yml` defines backend and frontend CI checks.
+- `docs` contains local-development and deployment guidance.
 
 ---
 
@@ -91,6 +128,20 @@ Architecture follows a modern full-stack separation:
   "total": 0
 }
 ```
+
+Application-level failures use a stable envelope:
+
+```json
+{
+  "error": {
+    "code": "APPLICATION_NOT_FOUND",
+    "message": "Application 42 was not found.",
+    "request_id": "a38c..."
+  }
+}
+```
+
+FastAPI validation failures retain their normal `422` response shape.
 
 
 ## Local Development
@@ -161,6 +212,42 @@ To verify the frontend production build, run from `apps/frontend`:
 npm ci
 npm run build
 ```
+
+### Complete local verification
+
+From the repository root in PowerShell:
+
+```powershell
+cd services/api
+.venv\Scripts\python.exe -m pytest -q
+cd ../../apps/frontend
+npm ci
+npm run build
+```
+
+Expected result: all backend tests pass and Next.js reports a successful optimized production build.
+
+### Run locally for screenshots
+
+Start the backend in one terminal:
+
+```powershell
+cd services/api
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt -r requirements-dev.txt
+uvicorn main:app --reload --port 8000
+```
+
+Start the frontend in a second terminal:
+
+```powershell
+cd apps/frontend
+npm ci
+$env:NEXT_PUBLIC_API_BASE_URL="http://localhost:8000"
+npm run dev
+```
+
+Open `http://localhost:3000` and capture the refreshed dashboard and application-workflow screenshots. The API documentation is available at `http://localhost:8000/docs`.
 
 ## Database Migrations
 
