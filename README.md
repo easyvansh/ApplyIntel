@@ -249,6 +249,15 @@ npm run dev
 
 Open `http://localhost:3000` and capture the refreshed dashboard and application-workflow screenshots. The API documentation is available at `http://localhost:8000/docs`.
 
+To add an idempotent 12-record demo dataset through the running API:
+
+```powershell
+cd services/api
+.venv\Scripts\python.exe seed_demo.py
+```
+
+Running the command again skips matching demo records instead of deleting or duplicating data.
+
 ## Database Migrations
 
 From `services/api`, apply all versioned migrations with:
