@@ -1,63 +1,27 @@
 from __future__ import annotations
 
-import json
-import logging
 import os
-import re
-import time
-import uuid
 from contextlib import asynccontextmanager
 from datetime import date, datetime
 from pathlib import Path
-from typing import Generator, Literal
+from typing import Literal
 
 from alembic import command
 from alembic.config import Config
-from fastapi import Depends, FastAPI, Query, Request
+from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
-from sqlalchemy import Date, DateTime, Integer, String, Text, and_, create_engine, func, or_, select
+from sqlalchemy import Date, DateTime, Integer, String, Text, and_, func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+from sqlalchemy.orm import Mapped, Session, mapped_column
+
+from database import Base, get_db
+from errors import APIError, register_error_handlers
+from logging_config import configure_request_logging
 
 
 Status = Literal["saved", "applied", "interview", "rejected", "offer"]
 SortOrder = Literal["asc", "desc"]
-REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]+$")
-
-request_logger = logging.getLogger("applyintel.requests")
-if not request_logger.handlers:
-    request_handler = logging.StreamHandler()
-    request_handler.setFormatter(logging.Formatter("%(message)s"))
-    request_logger.addHandler(request_handler)
-request_logger.setLevel(logging.INFO)
-request_logger.propagate = False
-error_logger = logging.getLogger("applyintel.errors")
-
-
-class APIError(Exception):
-    def __init__(self, status_code: int, code: str, message: str) -> None:
-        self.status_code = status_code
-        self.code = code
-        self.message = message
-        super().__init__(message)
-
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///./jobtrackr.db",
-)
-
-engine_kwargs: dict[str, object] = {}
-if DATABASE_URL.startswith("sqlite"):
-    engine_kwargs["connect_args"] = {"check_same_thread": False}
-
-engine = create_engine(DATABASE_URL, **engine_kwargs)
-SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 class Application(Base):
@@ -137,14 +101,6 @@ class ApplicationStatusUpdate(BaseModel):
     status: Status
 
 
-def get_db() -> Generator[Session, None, None]:
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 app = FastAPI(title="ApplyIntel API", version="2.0.0", lifespan=lifespan)
 
 raw_origins = os.getenv("ALLOWED_ORIGINS")
@@ -161,84 +117,8 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["X-Request-ID"],
 )
-
-
-def request_id_from_state(request: Request) -> str:
-    return getattr(request.state, "request_id", str(uuid.uuid4()))
-
-
-def error_response(request: Request, status_code: int, code: str, message: str) -> JSONResponse:
-    return JSONResponse(
-        status_code=status_code,
-        content={
-            "error": {
-                "code": code,
-                "message": message,
-                "request_id": request_id_from_state(request),
-            }
-        },
-    )
-
-
-@app.exception_handler(APIError)
-async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
-    return error_response(request, exc.status_code, exc.code, exc.message)
-
-
-@app.exception_handler(Exception)
-async def internal_error_handler(request: Request, exc: Exception) -> JSONResponse:
-    error_logger.exception(
-        "Unhandled API error request_id=%s path=%s",
-        request_id_from_state(request),
-        request.url.path,
-        exc_info=exc,
-    )
-    return error_response(
-        request,
-        500,
-        "INTERNAL_ERROR",
-        "An unexpected error occurred.",
-    )
-
-
-def get_request_id(request: Request) -> str:
-    supplied_request_id = request.headers.get("X-Request-ID", "").strip()
-    if (
-        supplied_request_id
-        and len(supplied_request_id) <= 128
-        and REQUEST_ID_PATTERN.fullmatch(supplied_request_id)
-    ):
-        return supplied_request_id
-    return str(uuid.uuid4())
-
-
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    request_id = get_request_id(request)
-    request.state.request_id = request_id
-    started_at = time.perf_counter()
-    status_code = 500
-
-    try:
-        response = await call_next(request)
-        status_code = response.status_code
-        response.headers["X-Request-ID"] = request_id
-        return response
-    finally:
-        duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
-        log_method = request_logger.error if status_code >= 500 else request_logger.info
-        log_method(
-            json.dumps(
-                {
-                    "request_id": request_id,
-                    "method": request.method,
-                    "path": request.url.path,
-                    "status": status_code,
-                    "duration_ms": duration_ms,
-                },
-                separators=(",", ":"),
-            )
-        )
+register_error_handlers(app)
+configure_request_logging(app)
 
 
 @app.get("/health")

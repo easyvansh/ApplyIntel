@@ -14,7 +14,8 @@ TEST_DATABASE_DIRECTORY = Path(tempfile.mkdtemp(prefix="applyintel-tests-"))
 TEST_DATABASE_PATH = TEST_DATABASE_DIRECTORY / "test.db"
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DATABASE_PATH.as_posix()}"
 
-from main import Application, SessionLocal, app, run_database_migrations  # noqa: E402
+from database import SessionLocal  # noqa: E402
+from main import Application, app, run_database_migrations  # noqa: E402
 
 
 run_database_migrations()
