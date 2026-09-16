@@ -20,11 +20,11 @@ The platform simulates a lightweight ATS (Applicant Tracking System) tailored fo
 ---
 
 ## Screenshots
-### Dashboard Overview
-![Dashboard overview](docs/screenshots/Dashboard.png)
+### V2 Dashboard Analytics
+![ApplyIntel V2 dashboard analytics with pipeline metrics and follow-up queue](docs/screenshots/Dashboard.png)
 
-### Application Form + Pipeline Table
-![Application form and pipeline table](docs/screenshots/form.png)
+### Application Pipeline
+![ApplyIntel application pipeline with demo records, filters, statuses, and pagination](docs/screenshots/form.png)
 
 ## Features
 
