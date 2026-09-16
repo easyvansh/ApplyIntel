@@ -20,6 +20,7 @@ import {
   deleteApplication,
   fetchApplications,
   fetchStats,
+  getApiErrorMessage,
   restoreApplication,
   updateApplicationStatus,
   createApplication,
@@ -138,7 +139,7 @@ export default function DashboardPage() {
       setApplications(list.items);
       setTotal(list.total);
     } catch (err) {
-      setError("Unable to load applications. Check the API server.");
+      setError(getApiErrorMessage(err, "Unable to load applications. Check the API server."));
     } finally {
       setLoading(false);
     }
@@ -149,32 +150,48 @@ export default function DashboardPage() {
   }, [query, statusFilter, hasLinkFilter, sortOrder, page]);
 
   const handleStatusUpdate = async (id: number, status: Status) => {
-    await updateApplicationStatus(id, status);
-    await loadData();
+    setError(null);
+    try {
+      await updateApplicationStatus(id, status);
+      await loadData();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Unable to update application status."));
+      await loadData();
+    }
   };
 
   const handleDelete = async () => {
     if (modalId === null) return;
-    await deleteApplication(modalId);
-    setToast({ id: modalId });
-    setModalId(null);
-    if (undoTimer.current) {
-      clearTimeout(undoTimer.current);
+    setError(null);
+    try {
+      await deleteApplication(modalId);
+      setToast({ id: modalId });
+      setModalId(null);
+      if (undoTimer.current) {
+        clearTimeout(undoTimer.current);
+      }
+      undoTimer.current = setTimeout(() => {
+        setToast(null);
+      }, 5000);
+      await loadData();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Unable to delete application."));
     }
-    undoTimer.current = setTimeout(() => {
-      setToast(null);
-    }, 5000);
-    await loadData();
   };
 
   const handleUndo = async () => {
     if (!toast) return;
-    await restoreApplication(toast.id);
-    setToast(null);
-    if (undoTimer.current) {
-      clearTimeout(undoTimer.current);
+    setError(null);
+    try {
+      await restoreApplication(toast.id);
+      setToast(null);
+      if (undoTimer.current) {
+        clearTimeout(undoTimer.current);
+      }
+      await loadData();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Unable to restore application."));
     }
-    await loadData();
   };
 
   const handleCreate = async (event: React.FormEvent) => {
@@ -189,10 +206,15 @@ export default function DashboardPage() {
       next_action_date: form.next_action_date || null,
       notes: form.notes.trim() || null,
     };
-    await createApplication(payload);
-    setForm({ ...DEFAULT_FORM, date_applied: form.date_applied });
-    setPage(1);
-    await loadData();
+    setError(null);
+    try {
+      await createApplication(payload);
+      setForm({ ...DEFAULT_FORM, date_applied: form.date_applied });
+      setPage(1);
+      await loadData();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Unable to create application."));
+    }
   };
 
   const handleExport = () => {

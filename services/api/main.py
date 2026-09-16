@@ -9,8 +9,9 @@ import uuid
 from datetime import date, datetime
 from typing import Generator, Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import Date, DateTime, Integer, String, Text, and_, create_engine, func, or_, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -28,6 +29,15 @@ if not request_logger.handlers:
     request_logger.addHandler(request_handler)
 request_logger.setLevel(logging.INFO)
 request_logger.propagate = False
+error_logger = logging.getLogger("applyintel.errors")
+
+
+class APIError(Exception):
+    def __init__(self, status_code: int, code: str, message: str) -> None:
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+        super().__init__(message)
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
@@ -154,6 +164,44 @@ app.add_middleware(
 )
 
 
+def request_id_from_state(request: Request) -> str:
+    return getattr(request.state, "request_id", str(uuid.uuid4()))
+
+
+def error_response(request: Request, status_code: int, code: str, message: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "error": {
+                "code": code,
+                "message": message,
+                "request_id": request_id_from_state(request),
+            }
+        },
+    )
+
+
+@app.exception_handler(APIError)
+async def api_error_handler(request: Request, exc: APIError) -> JSONResponse:
+    return error_response(request, exc.status_code, exc.code, exc.message)
+
+
+@app.exception_handler(Exception)
+async def internal_error_handler(request: Request, exc: Exception) -> JSONResponse:
+    error_logger.exception(
+        "Unhandled API error request_id=%s path=%s",
+        request_id_from_state(request),
+        request.url.path,
+        exc_info=exc,
+    )
+    return error_response(
+        request,
+        500,
+        "INTERNAL_ERROR",
+        "An unexpected error occurred.",
+    )
+
+
 def get_request_id(request: Request) -> str:
     supplied_request_id = request.headers.get("X-Request-ID", "").strip()
     if (
@@ -209,7 +257,7 @@ def health_ready(db: Session = Depends(get_db)) -> dict[str, str]:
     try:
         db.execute(select(1))
     except SQLAlchemyError as exc:
-        raise HTTPException(status_code=503, detail="Database unavailable") from exc
+        raise APIError(503, "DATABASE_UNAVAILABLE", "Database is unavailable.") from exc
 
     return {"status": "ready", "database": "connected"}
 
@@ -280,7 +328,11 @@ def update_application_status(
 ) -> Application:
     application = db.get(Application, application_id)
     if application is None or application.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Application not found")
+        raise APIError(
+            404,
+            "APPLICATION_NOT_FOUND",
+            f"Application {application_id} was not found.",
+        )
 
     application.status = payload.status
     db.add(application)
@@ -293,7 +345,11 @@ def update_application_status(
 def delete_application(application_id: int, db: Session = Depends(get_db)) -> Application:
     application = db.get(Application, application_id)
     if application is None or application.deleted_at is not None:
-        raise HTTPException(status_code=404, detail="Application not found")
+        raise APIError(
+            404,
+            "APPLICATION_NOT_FOUND",
+            f"Application {application_id} was not found.",
+        )
 
     application.deleted_at = datetime.utcnow()
     db.add(application)
@@ -306,9 +362,17 @@ def delete_application(application_id: int, db: Session = Depends(get_db)) -> Ap
 def restore_application(application_id: int, db: Session = Depends(get_db)) -> Application:
     application = db.get(Application, application_id)
     if application is None:
-        raise HTTPException(status_code=404, detail="Application not found")
+        raise APIError(
+            404,
+            "APPLICATION_NOT_FOUND",
+            f"Application {application_id} was not found.",
+        )
     if application.deleted_at is None:
-        raise HTTPException(status_code=400, detail="Application is not deleted")
+        raise APIError(
+            409,
+            "APPLICATION_NOT_DELETED",
+            f"Application {application_id} is not deleted.",
+        )
 
     application.deleted_at = None
     db.add(application)

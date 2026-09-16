@@ -41,11 +41,28 @@ export interface ApplicationListResponse {
   total: number;
 }
 
+interface APIErrorResponse {
+  error?: {
+    code?: string;
+    message?: string;
+    request_id?: string;
+  };
+  detail?: string;
+}
+
 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 export const api = axios.create({
   baseURL,
 });
+
+export function getApiErrorMessage(error: unknown, fallback: string) {
+  if (!axios.isAxiosError<APIErrorResponse>(error)) {
+    return fallback;
+  }
+
+  return error.response?.data?.error?.message || error.response?.data?.detail || fallback;
+}
 
 export async function fetchApplications(params: {
   q?: string;
